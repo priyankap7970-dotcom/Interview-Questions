@@ -287,6 +287,26 @@ Each environment had:
 
 State locking was enabled to prevent concurrent modifications.
 Before this setup, we faced issues with overlapping changes when multiple engineers ran Terraform locally. Remote backend with locking eliminated conflicts and ensured infrastructure consistency.
+
+What is a Terraform state file?
+
+A state file is a record of what Terraform has created in your cloud environment. It keeps track of all resources, their IDs, properties, and relationships. Terraform uses this file to know what exists, what needs to be updated, and what should be destroyed when you apply changes.
+
+Think of it like a map of your infrastructure that Terraform keeps to avoid creating duplicate resources or accidentally deleting something important.
+
+Key Points
+
+Tracks infrastructure – keeps the current status of VMs, networks, databases, etc.
+
+Required for updates – Terraform compares the state file with your configuration to decide what to change.
+
+Can be stored locally or remotely – in a file (local terraform.tfstate) or in a backend like Azure Storage, S3, etc.
+
+Shared in teams securely – storing remotely allows multiple people to work on the same infrastructure safely.
+
+Example for Interview
+
+💬 “A Terraform state file is a JSON file that keeps track of all the resources Terraform manages. When we run terraform apply, Terraform looks at the state file to see what already exists, what needs to be added, and what can be updated or deleted. For team projects, we store the state file in a remote backend like Azure Storage to allow safe collaboration and prevent conflicts.”
 ________________
 
 
