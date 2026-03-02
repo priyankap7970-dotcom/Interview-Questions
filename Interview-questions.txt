@@ -11,21 +11,15 @@ ________________
 We implemented a multi-stage YAML pipeline.
 CI Stages:
 * Build
-
 * Unit Test
-
 * SonarQube Analysis
-
 * Docker Build & Push
 
 CD Stages:
-   * Dev Deployment
-
-   * QA Deployment
-
-   * UAT Deployment
-
-   * Production Deployment (with approval)
+* Dev Deployment
+* QA Deployment
+* UAT Deployment
+* Production Deployment (with approval)
 
 We separated CI and CD to ensure only validated artifacts move forward. Production had manual approval configured through Azure DevOps Environments to enforce governance.
 Earlier, deployments were tightly coupled and risky. After implementing stage separation and approval gates, we improved release confidence and reduced failed production deployments.
@@ -42,13 +36,10 @@ ________________
 
 🔹 4. How did you design multi-environment deployments (Dev, QA, UAT, Prod)?
 Each environment had:
-      * Separate AKS namespace
-
-      * Separate variable group
-
-      * Separate Helm values file
-
-      * Separate Terraform state file
+  * Separate AKS namespace
+  * Separate variable group
+  * Separate Helm values file
+  * Separate Terraform state file
 
 We used the same Docker image across all environments to maintain consistency.
 Initially, configuration differences caused unexpected production issues. After isolating environment configurations and avoiding image rebuilds per environment, deployments became predictable and stable.
@@ -57,13 +48,10 @@ ________________
 
 🔹 5. How did you implement Infrastructure as Code? Explain folder structure and deployment flow.
 We used Terraform with modular structure:
-         * modules/ (AKS, ACR, networking, Key Vault)
-
-         * envs/dev
-
-         * envs/qa
-
-         * envs/prod
+        * modules/ (AKS, ACR, networking, Key Vault)
+        * envs/dev
+        * envs/qa
+        * envs/prod
 
 Each environment had its own backend configuration for state isolation.
 The pipeline executed terraform init, plan, and apply. Production apply required approval.
@@ -103,24 +91,21 @@ ________________
 
 🔹 10. How did you ensure high availability and disaster recovery?
 For high availability:
-            * AKS had multiple node pools
-
-            * Pods had replica sets
-
-            * Liveness and readiness probes were configured
-
-            * Cluster autoscaler enabled
+* AKS had multiple node pools
+* Pods had replica sets
+* Liveness and readiness probes were configured
+* Cluster autoscaler enabled
 
 For disaster recovery:
-               * Infrastructure defined in Terraform for recreation
-
-               * Images stored in ACR
-
-               * Backups enabled for database
-
-               * Multi-zone cluster configuration
+* Infrastructure defined in Terraform for recreation
+* Images stored in ACR
+* Backups enabled for database
+* Multi-zone cluster configuration
 
 This design ensured minimal downtime and quick recovery in case of failure.
+
+
+
 
 
 ## 🔹 CI/CD & Pipeline Implementation
@@ -191,11 +176,11 @@ ________________
 
 🔹 15. How did you create reusable YAML templates?
 We identified repeated steps like:
-                              * Docker build
+    * Docker build
 
-                              * Helm deployment
+    * Helm deployment
 
-                              * SonarQube analysis
+    * SonarQube analysis
 
 We created separate template YAML files and passed parameters like environment name, image tag, namespace.
 Earlier, duplication made maintenance difficult. After template implementation, pipeline updates became centralized and easier to manage.
@@ -254,24 +239,24 @@ ________________
 
 🔹 22. How did you automate infrastructure provisioning using Terraform?
 We used Terraform with modular structure to provision:
-                                 * AKS clusters
+              * AKS clusters
 
-                                 * ACR
+              * ACR
 
-                                 * VNets and subnets
+              * VNets and subnets
 
-                                 * Key Vault
+              * Key Vault
 
-                                 * Resource groups
+              * Resource groups
 
 Pipeline stages included:
-                                    * terraform init
+              * terraform init
 
-                                    * terraform validate
+              * terraform validate
 
-                                    * terraform plan
+              * terraform plan
 
-                                    * terraform apply
+              * terraform apply
 
 Production apply required manual approval.
 Earlier, infrastructure was created manually which caused configuration drift. After implementing Terraform with CI/CD integration, infrastructure became version-controlled, repeatable, and auditable.
@@ -281,9 +266,9 @@ ________________
 🔹 23. How did you manage Terraform state files?
 We configured a remote backend using Azure Storage Account.
 Each environment had:
-                                       * Separate backend configuration
+                * Separate backend configuration
 
-                                       * Separate state file
+                * Separate state file
 
 State locking was enabled to prevent concurrent modifications.
 Before this setup, we faced issues with overlapping changes when multiple engineers ran Terraform locally. Remote backend with locking eliminated conflicts and ensured infrastructure consistency.
@@ -312,11 +297,9 @@ ________________
 
 🔹 24. How did you deploy and manage AKS clusters?
 AKS clusters were provisioned using Terraform modules. We configured:
-                                          * Separate node pools for workloads
-
-                                          * Cluster autoscaler
-
-                                          * Multiple replicas for high availability
+            * Separate node pools for workloads
+            * Cluster autoscaler
+            * Multiple replicas for high availability
 
 Application deployments were handled using Helm charts via Azure DevOps CD pipeline.
 Initially, manual kubectl deployments created inconsistencies. After implementing Helm-based automated deployments, releases became standardized, version-controlled, and easier to manage.
@@ -335,13 +318,10 @@ ________________
 🔹 26. How did you manage environment-specific configurations (variable groups, library, etc.)?
 We maintained strict configuration separation across Dev, QA, UAT, and Prod.
 Each environment had:
-                                             * Separate Azure DevOps variable groups
-
-                                             * Separate Helm values.yaml files
-
-                                             * Separate Terraform backend/state files
-
-                                             * Separate AKS namespaces
+ * Separate Azure DevOps variable groups
+ * Separate Helm values.yaml files
+ * Separate Terraform backend/state files
+ * Separate AKS namespaces
 
 We passed the environment as a parameter in the pipeline, which dynamically loaded the respective variable group and Helm values file.
 Initially, we had issues where incorrect configurations were deployed to higher environments. After isolating environment configs and using parameterized pipelines, configuration errors reduced significantly and deployments became predictable and controlled.
@@ -350,9 +330,8 @@ ________________
 
 🔹 27. How did you implement auto-scaling in AKS or App Service?
 In AKS, we implemented two levels of scaling:
-                                                1. Horizontal Pod Autoscaler (HPA) – Configured based on CPU utilization thresholds.
-
-                                                2. Cluster Autoscaler – Enabled at node pool level to automatically add or remove nodes based on resource demand.
+1. Horizontal Pod Autoscaler (HPA) – Configured based on CPU utilization thresholds.
+2. Cluster Autoscaler – Enabled at node pool level to automatically add or remove nodes based on resource demand.
 
 We also defined proper resource requests and limits in Helm charts to ensure accurate scaling decisions.
 Earlier, during peak traffic, pods were getting overloaded. After implementing HPA and cluster autoscaler, the system handled traffic spikes smoothly and reduced resource waste during low usage periods.
@@ -376,13 +355,10 @@ ________________
 After deploying applications to AKS, we enabled Azure Monitor for Containers and integrated the cluster with a Log Analytics Workspace. This allowed us to collect node-level and pod-level metrics such as CPU usage, memory consumption, restarts, and network traffic.
 For application-level monitoring, we integrated Application Insights into the application code. This helped track request rates, response times, failure rates, dependency calls, and exceptions. Logs were centralized into Log Analytics for advanced querying using KQL.
 We configured alert rules for:
-                                                   * High CPU or memory utilization
-
-                                                   * Pod crash loops
-
-                                                   * Increased error rate
-
-                                                   * Slow response times
+ * High CPU or memory utilization
+ * Pod crash loops
+ * Increased error rate
+ * Slow response times
 
 Alerts were connected to email notifications and action groups.
 This monitoring setup helped us proactively identify performance bottlenecks and reduced mean time to resolution (MTTR) during incidents.
@@ -394,19 +370,15 @@ In one production deployment, users started experiencing intermittent 502 errors
 First, we checked Azure DevOps deployment logs to confirm the release was successful. Then we monitored AKS using Azure Monitor and noticed frequent pod restarts.
 Using kubectl describe pod and container logs, we identified that the new version had insufficient memory limits configured. The application was getting OOMKilled under peak traffic.
 To resolve it:
-                                                      * We temporarily scaled replicas to handle traffic.
-
-                                                      * Updated resource requests and limits in the Helm values file.
-
-                                                      * Redeployed using rolling update to avoid downtime.
+* We temporarily scaled replicas to handle traffic.
+* Updated resource requests and limits in the Helm values file.
+* Redeployed using rolling update to avoid downtime.
 
 After deployment, we monitored metrics closely to ensure stability.
 As a preventive action:
-                                                         * We implemented proper load testing before production releases.
-
-                                                         * Reviewed resource sizing strategy.
-
-                                                         * Added alerts for memory pressure and pod restart thresholds.
+* We implemented proper load testing before production releases.
+* Reviewed resource sizing strategy.
+* Added alerts for memory pressure and pod restart thresholds.
 
 This experience reinforced the importance of monitoring, proper resource planning, and validation before production rollout.
 ________________
@@ -418,22 +390,16 @@ ________________
 🔹 1. A pipeline succeeds in build stage but fails in release stage intermittently. How would you troubleshoot?
 First, I would compare successful vs failed runs in Azure DevOps to identify patterns — checking logs, timestamps, and environment variables.
 Since build succeeds, the issue is likely environment-specific. In our AKS-based deployment, intermittent failures were once caused by:
-                                                            * Image pull delay from ACR
-
-                                                            * Temporary cluster resource constraints
-
-                                                            * Incorrect Helm values for that environment
+* Image pull delay from ACR
+* Temporary cluster resource constraints
+* Incorrect Helm values for that environment
 
 I would:
-                                                               1. Check deployment logs in Azure DevOps.
-
-                                                               2. Check AKS pod status using kubectl get pods.
-
-                                                               3. Review container logs.
-
-                                                               4. Validate image availability in ACR.
-
-                                                               5. Check resource utilization in Azure Monitor.
+1. Check deployment logs in Azure DevOps.
+2. Check AKS pod status using kubectl get pods.
+3. Review container logs.
+4. Validate image availability in ACR.
+5. Check resource utilization in Azure Monitor.
 
 In one real case, the failure was due to insufficient node capacity during peak load. Enabling cluster autoscaler resolved the intermittent issue.
 The key is isolating whether the problem is pipeline logic or infrastructure behavior.
@@ -443,22 +409,17 @@ ________________
 🔹 2. You need to deploy to Dev, QA, UAT, Prod with manual approvals only for Prod. How would you design this?
 I would design a multi-stage YAML pipeline.
 Stages:
-                                                                  * Dev (automatic)
-
-                                                                  * QA (automatic)
-
-                                                                  * UAT (automatic)
-
-                                                                  * Prod (manual approval)
+* Dev (automatic)
+* QA (automatic)
+* UAT (automatic)
+* Prod (manual approval)
 
 Using Azure DevOps Environments, I would configure manual approval only on the Production environment.
 The same Docker image built in CI would be promoted across all environments. Only configuration changes (via Helm values) would differ.
 This approach ensures:
-                                                                     * Fast lower environment validation
-
-                                                                     * Governance control before production
-
-                                                                     * Artifact consistency across environments
+    * Fast lower environment validation
+    * Governance control before production
+    * Artifact consistency across environments
 
 We followed this design to reduce production risk while maintaining deployment speed.
 ________________
@@ -467,16 +428,13 @@ ________________
 🔹 3. A production deployment failed and partially updated resources. How would you recover safely?
 First, I would identify whether it’s an application failure or infrastructure issue.
 Since we use immutable Docker images and Helm deployments, recovery is simpler:
-                                                                        1. Redeploy the previous stable image tag from ACR.
-
-                                                                        2. Run helm rollback if required.
-
-                                                                        3. Verify pod health and service routing.
+1. Redeploy the previous stable image tag from ACR.
+2. Run helm rollback if required.
+3. Verify pod health and service routing.
 
 If Terraform caused partial infrastructure updates, I would:
-                                                                           * Run a terraform plan to check drift.
-
-                                                                           * Reapply configuration to reach desired state.
+* Run a terraform plan to check drift.
+* Reapply configuration to reach desired state.
 
 In one case, a Helm deployment failed midway due to a configuration error. We immediately redeployed the previous image version and restored traffic without downtime.
 Rollback strategy based on immutable artifacts made recovery safe and fast.
@@ -486,18 +444,14 @@ ________________
 🔹 4. You must deploy multiple microservices independently but from a single repository. How would you structure pipelines?
 In our microservices architecture, each service had its own folder within a monorepo.
 I structured pipelines using:
-                                                                              * Path-based triggers
-
-                                                                              * Separate YAML templates per microservice
-
-                                                                              * Parameterized pipelines
+ * Path-based triggers
+ * Separate YAML templates per microservice
+ * Parameterized pipelines
 
 Each microservice:
-                                                                                 * Built its own Docker image
-
-                                                                                 * Pushed to ACR
-
-                                                                                 * Deployed independently via Helm
+* Built its own Docker image
+* Pushed to ACR
+* Deployed independently via Helm
 
 This allowed independent releases without affecting other services.
 The key decision was decoupling deployments while keeping shared templates to avoid duplication.
@@ -507,20 +461,14 @@ ________________
 🔹 5. The build time has increased from 5 minutes to 25 minutes. How would you optimize it?
 First, I would analyze which stage is consuming time using pipeline logs.
 Common causes we encountered:
-                                                                                    * Dependency restore delay
-
-                                                                                    * Docker layer rebuild
-
-                                                                                    * Added static scans
+* Dependency restore delay
+* Docker layer rebuild* Added static scans
 
 Optimizations implemented:
-                                                                                       * Dependency caching
-
-                                                                                       * Optimized Dockerfile layer ordering
-
-                                                                                       * Parallel job execution
-
-                                                                                       * Removed unnecessary debug steps
+* Dependency caching
+* Optimized Dockerfile layer ordering
+* Parallel job execution
+* Removed unnecessary debug steps
 
 After optimization, build time reduced significantly and developer productivity improved.
 ________________
@@ -528,14 +476,12 @@ ________________
 
 🔹 6. You need to run different pipeline stages based on branch name. How would you configure conditions?
 In YAML, I would use conditional expressions:
-                                                                                          * Deploy to Dev for feature branches
-
-                                                                                          * Deploy to QA/UAT for main branch
-
-                                                                                          * Deploy to Prod only from release branch
+* Deploy to Dev for feature branches
+* Deploy to QA/UAT for main branch
+* Deploy to Prod only from release branch
 
 Example logic:
-                                                                                             * condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
+* condition: eq(variables['Build.SourceBranch'], 'refs/heads/main')
 
 This ensures controlled promotion strategy.
 We used branch-based conditions to prevent accidental production deployments from feature branches.
@@ -546,9 +492,8 @@ ________________
 Since we had multiple microservices, we implemented path-based triggers.
 Each pipeline stage checked if changes occurred in a specific folder using path filters.
 If only Service-A changed:
-                                                                                                * Only Service-A Docker image was rebuilt
-
-                                                                                                * Only Service-A Helm deployment executed
+* Only Service-A Docker image was rebuilt
+* Only Service-A Helm deployment executed
 
 This significantly reduced deployment time and avoided unnecessary restarts of unrelated services.
 ________________
@@ -557,23 +502,20 @@ ________________
 🔹 8. You want to reuse pipeline logic across 20 projects. How would you design templates?
 We created a centralized templates repository.
 Common templates included:
-                                                                                                   * Docker build template
-
-                                                                                                   * Helm deploy template
-
-                                                                                                   * SonarQube scan template
-
-                                                                                                   * Terraform template
+* Docker build template
+* Helm deploy template
+* SonarQube scan template
+* Terraform template
 
 Each project referenced templates using:
 resources:
  repositories:
 We passed parameters such as:
-                                                                                                      * Image name
+    * Image name
 
-                                                                                                      * Namespace
+    * Namespace
 
-                                                                                                      * Environment
+    * Environment
 
 This eliminated duplication and ensured consistency across projects.
 When updates were required, we modified the template once and all pipelines inherited the change.
@@ -584,22 +526,14 @@ ________________
 In our project, Terraform state was stored in an Azure Storage Account with state locking enabled.
 If a deployment failed and left the state locked, the next pipeline run would fail with a lock error.
 First, I would:
-                                                                                                         1. Verify if another pipeline or user is actively running Terraform.
-
-                                                                                                         2. Check the lock information in the error message.
-
-                                                                                                         3. If it’s a stale lock (for example, previous pipeline crashed), I would safely run:
-
-terraform force-unlock <LOCK_ID>
-
-after confirming no active operations are running.
+1. Verify if another pipeline or user is actively running Terraform.
+2. Check the lock information in the error message.
+3. If it’s a stale lock (for example, previous pipeline crashed), I would safely run: terraform force-unlock <LOCK_ID> after confirming no active operations are running.
 
 To prevent recurrence:
-                                                                                                            * We restricted Terraform execution only through pipeline (not local machines).
-
-                                                                                                            * Enabled proper pipeline timeout handling.
-
-                                                                                                            * Avoided parallel apply operations.
+* We restricted Terraform execution only through pipeline (not local machines).
+* Enabled proper pipeline timeout handling.
+* Avoided parallel apply operations.
 
 This reduced state conflicts and ensured infrastructure consistency.
 ________________
@@ -608,26 +542,20 @@ ________________
 🔹 10. You need to deploy infrastructure in multiple regions simultaneously. How would you design the pipeline?
 I would design a parameterized multi-stage pipeline.
 Each stage would:
-                                                                                                               * Accept region as parameter
-
-                                                                                                               * Use region-specific backend configuration
-
-                                                                                                               * Use Terraform workspaces or separate state files per region
+* Accept region as parameter
+* Use region-specific backend configuration
+* Use Terraform workspaces or separate state files per region
 
 Example:
-                                                                                                                  * Stage 1 → East US
-
-                                                                                                                  * Stage 2 → Central India
-
-                                                                                                                  * Stage 3 → West Europe
+* Stage 1 → East US
+* Stage 2 → Central India
+* Stage 3 → West Europe
 
 To optimize, I would run region deployments in parallel jobs.
 This design ensures:
-                                                                                                                     * Region isolation
-
-                                                                                                                     * Independent state management
-
-                                                                                                                     * Faster multi-region rollout
+* Region isolation
+* Independent state management
+* Faster multi-region rollout
 
 In disaster recovery planning, we used region-based design to enable failover capability.
 ________________
@@ -635,21 +563,16 @@ ________________
 
 🔹 11. Infrastructure deployment must require security team approval. How would you enforce this?
 In Azure DevOps, I would configure:
-                                                                                                                        * Separate Infrastructure pipeline
-
-                                                                                                                        * Use Azure DevOps Environments
-
-                                                                                                                        * Enable manual approval for Production environment
+* Separate Infrastructure pipeline
+* Use Azure DevOps Environments * Enable manual approval for Production environment
 
 Before terraform apply in Prod:
-                                                                                                                           * Security team is added as required approver.
-
-                                                                                                                           * Pipeline pauses until approval is granted.
+* Security team is added as required approver.
+* Pipeline pauses until approval is granted.
 
 Additionally:
-                                                                                                                              * Use branch policies so only reviewed changes reach main.
-
-                                                                                                                              * Store Terraform code in a separate repository with restricted access.
+* Use branch policies so only reviewed changes reach main.
+* Store Terraform code in a separate repository with restricted access.
 
 This enforces governance and compliance before infrastructure modifications.
 ________________
@@ -661,14 +584,11 @@ Running:
 terraform plan
 terraform apply
 would recreate missing resources based on state.
+
 To prevent future deletion:
-                                                                                                                                 * Assign least privilege RBAC (avoid subscription owner access).
-
-                                                                                                                                 * Enable resource locks (CanNotDelete) on critical resources.
-
-                                                                                                                                 * Restrict portal-level manual access.
-
-                                                                                                                                 * Enforce all infrastructure changes through Terraform pipeline only.
+* Assign least privilege RBAC (avoid subscription owner access).* Enable resource locks (CanNotDelete) on critical resources.
+* Restrict portal-level manual access.
+* Enforce all infrastructure changes through Terraform pipeline only.
 
 After implementing resource locks and RBAC tightening, accidental deletions were prevented.
 ________________
@@ -677,31 +597,22 @@ ________________
 🔹 13. You need to separate infrastructure pipeline from application pipeline. How would you design it?
 We separated them into two pipelines:
 Infrastructure Pipeline:
-                                                                                                                                    * Terraform init
-
-                                                                                                                                    * Validate
-
-                                                                                                                                    * Plan
-
-                                                                                                                                    * Apply
-
-                                                                                                                                    * Manual approval for Prod
+* Terraform init
+* Validate
+* Plan
+* Apply
+* Manual approval for Prod
 
 Application Pipeline:
-                                                                                                                                       * Build
+* Build
+* Test
+* Docker build
+* Push to ACR
+* Helm deploy to AKS
 
-                                                                                                                                       * Test
-
-                                                                                                                                       * Docker build
-
-                                                                                                                                       * Push to ACR
-
-                                                                                                                                       * Helm deploy to AKS
-
-Reason for separation:
-                                                                                                                                          * Infrastructure changes are less frequent but higher risk.
-
-                                                                                                                                          * Application deployments are frequent and automated.
+Reason for separation: 
+*Infrastructure changes are less frequent but higher risk.
+*Application deployments are frequent and automated.
 
 This separation improved clarity, access control, and reduced risk of accidental infra modification during app releases.
 ________________
@@ -712,48 +623,36 @@ We configured separate backend blocks per environment.
 Option 1:
 Separate backend configuration files:
                                                                                                                                              * backend-dev.tf
-
-                                                                                                                                             * backend-prod.tf
+backend-prod.tf
 
 Option 2 (used in pipeline):
 Pass backend config dynamically during terraform init:
 terraform init -backend-config=dev.backend.tfvars
 Each environment had:
-                                                                                                                                                * Separate storage container
+                                                                                                                                                * Separate storage container                                                                                                                    * Separate state file name
 
-                                                                                                                                                * Separate state file name
-
-This ensured:
-                                                                                                                                                   * Environment isolation
-
-                                                                                                                                                   * No cross-environment state corruption
-
-                                                                                                                                                   * Safe promotion strategy
+This ensured:                                                                                                                                    * Environment isolation                                                                                                                         * No cross-environment state corruption
+ * Safe promotion strategy
 
 It prevented a situation where Dev changes accidentally impacted Production state.
-🔹 Security & Governance Scenarios
 
 
+🔹 Security & Governance Scenarios:
 🔹 15. Developers should not have permission to deploy directly to Production. How would you enforce this?
 In our setup, Production deployment was controlled using Azure DevOps Environments with manual approvals.
 Developers had:
-                                                                                                                                                      * Access to commit code
-
-                                                                                                                                                      * Access to trigger CI
-
-                                                                                                                                                      * Access to deploy to Dev/QA
+                                                                                                                                                * Access to commit code
+* Access to trigger CI
+* Access to deploy to Dev/QA
 
 But for Production:
-                                                                                                                                                         * Only Release Managers were added as approvers
-
-                                                                                                                                                         * Manual approval was mandatory before the Prod stage
-
-                                                                                                                                                         * Direct pipeline modification permissions were restricted
+* Only Release Managers were added as approvers
+* Manual approval was mandatory before the Prod stage
+* Direct pipeline modification permissions were restricted
 
 Additionally:
-                                                                                                                                                            * RBAC in Azure limited deployment permissions at resource group level
-
-                                                                                                                                                            * No developer had direct portal access to Production AKS
+* RBAC in Azure limited deployment permissions at resource group level
+* No developer had direct portal access to Production AKS
 
 This ensured separation of duties and prevented accidental or unauthorized production deployments.
 ________________
@@ -761,20 +660,15 @@ ________________
 
 🔹 16. Secrets are exposed in pipeline logs. How would you fix and prevent this?
 If secrets appear in logs, immediate steps:
-                                                                                                                                                               1. Rotate the exposed secret immediately.
-
-                                                                                                                                                               2. Identify where it was printed (script echo, misconfigured variable).
+ 1. Rotate the exposed secret immediately.
+ 2. Identify where it was printed (script echo, misconfigured variable).
 
 To prevent this:
-                                                                                                                                                                  * Store secrets in Azure Key Vault
-
-                                                                                                                                                                  * Link Key Vault to Azure DevOps Variable Groups
-
-                                                                                                                                                                  * Mark variables as secret
-
-                                                                                                                                                                  * Avoid printing sensitive variables in scripts
-
-                                                                                                                                                                  * Use secure files if needed
+* Store secrets in Azure Key Vault
+* Link Key Vault to Azure DevOps Variable Groups
+* Mark variables as secret
+* Avoid printing sensitive variables in scripts
+* Use secure files if needed
 
 After migrating secrets fully to Key Vault and enabling masking, secrets were automatically hidden in logs.
 This significantly improved pipeline security and compliance posture.
@@ -784,13 +678,10 @@ ________________
 🔹 17. You need to rotate service principal credentials without downtime. How would you handle it?
 Since Azure DevOps Service Connections use Service Principal credentials:
 Steps:
-                                                                                                                                                                     1. Create a new client secret in Azure AD for the same Service Principal.
-
-                                                                                                                                                                     2. Update the Service Connection in Azure DevOps with the new secret.
-
-                                                                                                                                                                     3. Test pipeline execution.
-
-                                                                                                                                                                     4. Remove the old secret after validation.
+1. Create a new client secret in Azure AD for the same Service Principal.
+2. Update the Service Connection in Azure DevOps with the new secret.
+3. Test pipeline execution.
+4. Remove the old secret after validation.
 
 Because deployments use pipeline authentication (not embedded credentials), rotation does not impact running workloads.
 This ensures secure credential lifecycle management without affecting active services.
@@ -799,19 +690,13 @@ ________________
 
 🔹 18. A team member left the organization. How would you audit and revoke access in Azure DevOps?
 Steps taken:
-                                                                                                                                                                        1. Disable user account in Azure AD.
-
-                                                                                                                                                                        2. Remove user from Azure DevOps Project groups.
-
-                                                                                                                                                                        3. Review:
-
-                                                                                                                                                                           * Service Connections access
-
-                                                                                                                                                                           * Pipeline permissions
-
-                                                                                                                                                                           * Repository permissions
-
-                                                                                                                                                                              4. Audit logs in Azure DevOps to verify last activities.
+1. Disable user account in Azure AD.
+2. Remove user from Azure DevOps Project groups.
+3. Review:
+* Service Connections access
+* Pipeline permissions
+* Repository permissions
+4. Audit logs in Azure DevOps to verify last activities.
 
 We followed role-based access control (RBAC), so removing group membership automatically revoked most permissions.
 This ensured no lingering access risk after employee exit.
