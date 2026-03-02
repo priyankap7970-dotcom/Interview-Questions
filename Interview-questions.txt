@@ -110,7 +110,6 @@ This design ensured minimal downtime and quick recovery in case of failure.
 
 ## 🔹 CI/CD & Pipeline Implementation
 
-
 🔹 11. Did you use YAML or Classic pipelines? Why?
 We used YAML pipelines because we wanted pipeline-as-code and version control.
 Initially, some deployments were managed through Classic pipelines, but changes were not traceable and harder to maintain. So we migrated everything to YAML.
@@ -230,6 +229,7 @@ Earlier, rebuilding images per environment caused inconsistencies. After switchi
 
 
 ## 🔹 Azure Integration & Infrastructure
+
 🔹 21. How did you configure Service Connections in Azure DevOps?
 We created a Service Principal in Azure AD and assigned least-privilege RBAC access at the resource group level.
 This Service Principal was configured as an Azure Resource Manager Service Connection in Azure DevOps.
@@ -274,23 +274,16 @@ State locking was enabled to prevent concurrent modifications.
 Before this setup, we faced issues with overlapping changes when multiple engineers ran Terraform locally. Remote backend with locking eliminated conflicts and ensured infrastructure consistency.
 
 What is a Terraform state file?
-
 A state file is a record of what Terraform has created in your cloud environment. It keeps track of all resources, their IDs, properties, and relationships. Terraform uses this file to know what exists, what needs to be updated, and what should be destroyed when you apply changes.
-
 Think of it like a map of your infrastructure that Terraform keeps to avoid creating duplicate resources or accidentally deleting something important.
 
-Key Points
-
-Tracks infrastructure – keeps the current status of VMs, networks, databases, etc.
-
-Required for updates – Terraform compares the state file with your configuration to decide what to change.
-
-Can be stored locally or remotely – in a file (local terraform.tfstate) or in a backend like Azure Storage, S3, etc.
-
-Shared in teams securely – storing remotely allows multiple people to work on the same infrastructure safely.
+Key Points:
+1. Tracks infrastructure – keeps the current status of VMs, networks, databases, etc.
+2. Required for updates – Terraform compares the state file with your configuration to decide what to change.
+3. Can be stored locally or remotely – in a file (local terraform.tfstate) or in a backend like Azure Storage, S3, etc.
+4. Shared in teams securely – storing remotely allows multiple people to work on the same infrastructure safely.
 
 Example for Interview
-
 💬 “A Terraform state file is a JSON file that keeps track of all the resources Terraform manages. When we run terraform apply, Terraform looks at the state file to see what already exists, what needs to be added, and what can be updated or deleted. For team projects, we store the state file in a remote backend like Azure Storage to allow safe collaboration and prevent conflicts.”
 ________________
 
@@ -350,7 +343,12 @@ ________________
 
 
 
+
+
+
+
 ## 🔹 Monitoring, Logging & Troubleshooting
+
 29. How did you implement monitoring and logging after deployment (Azure Monitor, App Insights)?
 After deploying applications to AKS, we enabled Azure Monitor for Containers and integrated the cluster with a Log Analytics Workspace. This allowed us to collect node-level and pod-level metrics such as CPU usage, memory consumption, restarts, and network traffic.
 For application-level monitoring, we integrated Application Insights into the application code. This helped track request rates, response times, failure rates, dependency calls, and exceptions. Logs were centralized into Log Analytics for advanced querying using KQL.
@@ -384,8 +382,11 @@ This experience reinforced the importance of monitoring, proper resource plannin
 ________________
 
 
-🔹 CI/CD Pipeline Scenarios
 
+
+
+
+🔹 CI/CD Pipeline Scenarios
 
 🔹 1. A pipeline succeeds in build stage but fails in release stage intermittently. How would you troubleshoot?
 First, I would compare successful vs failed runs in Azure DevOps to identify patterns — checking logs, timestamps, and environment variables.
@@ -635,7 +636,12 @@ This ensured:                                                                   
 It prevented a situation where Dev changes accidentally impacted Production state.
 
 
+
+
+
+
 🔹 Security & Governance Scenarios:
+
 🔹 15. Developers should not have permission to deploy directly to Production. How would you enforce this?
 In our setup, Production deployment was controlled using Azure DevOps Environments with manual approvals.
 Developers had:
@@ -821,7 +827,11 @@ Then merge is allowed.
 After implementing strict branch policies in our project, accidental or unreviewed merges stopped completely, and code quality improved significantly.
 
 
+
+
+
 🔹 Container & Kubernetes Scenarios
+
 🔹 26. You need to build Docker images and push them to ACR automatically. How would you design it?
 Answer :
 So in my retail AKS project, we fully automated the Docker build and push process using Azure DevOps YAML pipelines.
@@ -895,6 +905,8 @@ Each environment has its own values file — like values-dev.yaml, values-prod.y
 The image tag is dynamically passed from the build stage using the Build ID, so we deploy the exact image built earlier.
 If something goes wrong, Helm makes rollback very simple using helm rollback.
 Helm helped us maintain version control of releases and made deployments more structured compared to raw kubectl.
+
+
 
 
 
@@ -999,6 +1011,10 @@ Then I optimize step by step:
 In one scenario, Docker build stage was taking too long because layers were invalidating every time. I restructured the Dockerfile so that dependency installation happened before copying application code, which improved layer caching.
 Also, I ensure that production-grade security scans run only on main or release branches, not on every feature commit.
 After optimization, overall compute usage reduced and pipeline execution became faster and more cost-efficient.
+
+
+
+
 
 
 
