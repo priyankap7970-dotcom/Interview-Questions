@@ -1135,10 +1135,10 @@ Azure Storage Account
 AWS S3 bucket
 
 1️⃣ How do you manage multiple environments?
-Workspaces
-Separate backend per environment
-Folder structure: dev / stage / prod
-Variable files (terraform.tfvars)
+1. Workspaces are separate for each environment- Eg; terraform workspace new dev, terraform workspace new qa,terraform workspace new prod
+2. Separate backend per environment-means different Terraform state file stored remotely 
+3. Folder structure: dev / stage / prod
+4. Variable files (terraform.tfvars)
 
 2️⃣ How do you handle secrets in Terraform?
 Use Azure Key Vault
@@ -1158,18 +1158,7 @@ Terraform automatically understands dependencies using resource references.
 Manual dependency:
 depends_on = [azurerm_resource_group.rg]
 
-5️⃣ What is the difference between count and for_each?
-count → Based on index
-for_each → Based on map or set
-for_each preferred in production
-
-
 🔹 Scenario-Based Questions (Very Important 🔥)
-
-🔸 Production Issue: State File Corrupted – What Will You Do?
-Check remote backend
-Restore from backup
-Use terraform state commands carefully
 
 🔸 You Deleted Resource Manually from Azure. What Happens?
 Terraform will recreate during next apply.
@@ -1177,14 +1166,40 @@ Terraform will recreate during next apply.
 🔸 How do you import existing resources?
 terraform import
 
-🔸 How do you reduce downtime in Terraform?
-Use lifecycle create_before_destroy
-Blue-Green strategy
-Proper dependency handling
+***********************How do you reduce downtime in Terraform?*****************************************
+1. Use lifecycle create_before_destroy: 
+       Eg; lifecycle { create_before_destroy = true }
+
+Normally, if a resource needs replacement, Terraform:
+----Destroys old resource
+----Creates new resource
+This can cause downtime.
+
+But using Create before destroy terraform will:
+---Create new VM
+---Then destroy old VM
+👉 This reduces downtime.
+
+2. Blue-Green strategy: You maintain two identical environments:
+🔵 Blue → Current Production (Live)
+🟢 Green → New Version
+
+Instead of updating the live environment directly, you deploy the new version to Green, test it, and then switch traffic.
+
+🔁 How It Works (Step by Step)
+1️⃣ Blue environment is serving users
+2️⃣ Deploy new version to Green
+3️⃣ Test Green completely
+4️⃣ Switch traffic (Load Balancer / DNS) from blue to green
+5️⃣ If everything works → delete Blue
+6️⃣ If issue occurs → switch back to Blue instantly
+
+“Blue-Green deployment is a zero-downtime strategy where we maintain two identical environments. The new version is deployed to the Green environment, tested, and then traffic is switched from Blue to Green. This allows safe deployments and instant rollback if any issue occurs.”
+
+3. Proper dependency handling: “Proper dependency handling means ensuring resources are created and destroyed in the correct order. Terraform manages this automatically through resource references, and when needed, I use depends_on to explicitly define dependencies to avoid deployment failures.”
 
 
-
-🔹 CI/CD + Terraform Questions (Important for Azure DevOps)
+----------------- CI/CD + Terraform Questions (Important for Azure DevOps)------------------------------------------
 
 1.How do you integrate Terraform with CI/CD?
 Use Azure DevOps
