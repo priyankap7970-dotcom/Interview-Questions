@@ -2040,3 +2040,63 @@ Remove unused persistent volumes.
 Q6. Stateful apps in Kubernetes
 Use StatefulSets + PVs + Headless Services.
 Example: Deploy PostgreSQL or Redis with persistent storage and unique network identity.
+
+Q7. How does scaling work in Azure Kubernetes Service (AKS) at both pod and node levels?
+
+AKS supports two types of scaling:
+
+Pod-level scaling (Horizontal Pod Autoscaler – HPA):
+Automatically adjusts the number of pods based on CPU/memory or custom metrics.
+Example: If CPU > 70%, HPA increases pod replicas from 3 → 5.
+
+Node-level scaling (Cluster Autoscaler):
+Automatically adds/removes nodes based on unschedulable pods or underutilized nodes.
+Works with VMSS node pools in AKS.
+
+Together, HPA and Cluster Autoscaler ensure apps scale smoothly without downtime.
+
+Q8. What are Pod Disruptions in Kubernetes, and what is the difference between voluntary and involuntary disruptions?
+
+Pod Disruptions are situations where pods are terminated or temporarily unavailable, which can affect application availability.
+
+Voluntary Disruptions: Initiated by the user or cluster admin, e.g., draining a node for maintenance or manually deleting a pod.
+
+Involuntary Disruptions: Caused by system failures, e.g., node crashes, kubelet failure, or hardware issues.
+
+💡 Example:
+Draining a node for AKS upgrade → voluntary.
+Node goes down unexpectedly → involuntary.
+
+Q9. What is a Pod Disruption Budget (PDB), and how does it protect application availability?
+A Pod Disruption Budget (PDB) is a policy that limits how many pods can be voluntarily disrupted at a time.
+Ensures that enough pods remain available to serve traffic during maintenance or updates.
+Helps prevent downtime during voluntary actions like upgrades or scaling.
+
+Q10. You have an AKS cluster running Kubernetes 1.9 (very old version) and want to upgrade it to a newer version, e.g., 1.30.x, safely.
+
+1. Check Current Version & Available Upgrades
+az aks show → current cluster version
+az aks get-upgrades → list supported upgrade versions
+
+2. Upgrade Control Plane (Master)
+Azure manages API server, etcd, controllers.
+Command: az aks upgrade --kubernetes-version <new-version>
+This is non-disruptive for workloads.
+
+3. Upgrade Node Pools (Worker Nodes)
+Upgrade one node pool at a time.
+Old nodes are cordoned, pods rescheduled, new nodes join cluster.
+Command: az aks nodepool upgrade --name <nodepool>
+
+4. Verify Cluster Health
+Check all nodes are Ready: kubectl get nodes
+Check all pods are running: kubectl get pods -A
+Validate system components (CoreDNS, ingress controllers).
+
+5. Post-Upgrade Tasks
+Test applications in staging before production.
+Ensure CI/CD pipelines, Helm charts, and Terraform modules work with the new version.
+Monitor logs and metrics to catch issues early.
+
+💡 Tip for Interview:
+“I always approach AKS upgrades in stages: first the control plane, then node pools one by one, verifying pod health after each step. I also make sure to test workloads and CI/CD compatibility before upgrading production, so downtime is avoided.”
