@@ -1597,3 +1597,446 @@ My Typical Day as an Azure DevOps Engineer:
 7. The Triage Call: Towards the end of the day, I lead or join a Triage Call. We review newly raised tickets to prioritize what’s critical. I look for patterns—if I see the same pipeline failing for multiple people, I flag it for a permanent fix rather than a quick workaround.
 
 8. The Clean Exit: Before logging off, I do one last check of the Production dashboards. I make sure my Terraform state is clean and my Jira status is updated so the team knows exactly where things stand for the next morning.
+
+
+
+****************************************KUBERNETES************************************************************
+
+1. Core Kubernetes Concepts
+
+Q1. What is Kubernetes, and why is it used in DevOps pipelines?
+A: Kubernetes is an open-source container orchestration platform for automating deployment, scaling, and management of containerized applications. In DevOps pipelines, it enables CI/CD, microservices deployment, high availability, and rolling updates, reducing downtime and manual intervention.
+
+Q2. Explain the Kubernetes architecture: master node vs worker node.
+A: 
+Master Node: Controls the cluster. Components: API Server, Scheduler, Controller Manager, and etcd (key-value store).
+
+Worker Node: Runs applications in Pods. Components: Kubelet, Kube-Proxy, Container runtime (Docker/containerd).
+The components work together to orchestrate containerized applications at scale.
+
+1. Control Plane (Master Node): The control plane manages the cluster and makes decisions like scheduling, scaling, and updates. Components:
+a) apiserver: 
+The front-end REST API for Kubernetes.
+All cluster operations go through this.
+Handles authentication, authorization, and validation.
+
+b) etcd:
+Distributed key-value store for cluster state.
+Stores all configurations, secrets, and cluster metadata.
+Highly available and consistent.
+
+c) scheduler:
+Assigns pods to worker nodes based on resource requirements, affinity, taints, tolerations, and policies.
+Ensures load balancing across nodes.
+
+d) controller-manager: 
+Runs controller processes:
+Node controller → monitors node health.
+Replication controller → ensures desired pod count.
+Endpoints controller → manages services.
+Job controller → handles batch jobs.
+
+e) cloud-controller-manager (if running on cloud, e.g., Azure)
+Integrates Kubernetes with cloud provider APIs.
+Manages load balancers, storage, networking specific to the cloud.
+
+3. Worker Node Components: Worker nodes host the application workloads.
+
+a) kubelet:
+Agent running on each node.
+Ensures containers in pods are running as expected.
+Communicates with API server.
+
+b) kube-proxy:
+Handles networking & load balancing within the cluster.
+Implements service abstraction, enabling pods to communicate reliably.
+
+c) Container Runtime:
+Runs the containers (e.g., Docker, containerd, CRI-O).
+Manages image pulling, starting, stopping containers.
+
+4. Pod & Node Communication: Pods are the smallest deployable units; multiple containers can exist in a pod.
+
+Communication uses:
+ClusterIP (internal service)
+NodePort / LoadBalancer (external access)
+DNS is managed via CoreDNS for service discovery.
+
+5. Optional Add-ons / Enhancements
+Ingress Controller – HTTP/HTTPS routing.
+Metrics Server – resource metrics for autoscaling.
+Network Plugins (CNI) – Calico, Flannel for pod networking.
+Helm – package management.
+Prometheus / Grafana – monitoring.
+
+6. Azure Specific Considerations:
+When deploying K8s on Azure (AKS – Azure Kubernetes Service):
+1. Control plane is managed by Azure (you don’t manage master nodes).
+2. Integration with Azure services: 
+                 * Azure Container Registry (ACR) for images.
+                 * Azure Monitor / Log Analytics for observability.
+                 * Azure Load Balancer for services.
+3. RBAC & Azure AD integration for authentication.
+
+
+********Summary*************************************************************
+
+| Component               | Role                         |
+| ----------------------- | ---------------------------- |
+| kube-apiserver          | Cluster API frontend         |
+| etcd                    | Cluster state storage        |
+| kube-scheduler          | Assign pods to nodes         |
+| kube-controller-manager | Ensures desired state        |
+| kubelet                 | Ensures pods run on node     |
+| kube-proxy              | Networking & load balancing  |
+| Container Runtime       | Runs containers              |
+| Pods                    | Smallest deployable unit     |
+| Ingress/Service         | Networking & traffic routing |
+
+***********************************************************************************************
+
+Q3. What are Pods, and how do they differ from containers?
+A: Pods are the smallest deployable units in Kubernetes and can contain one or more containers sharing storage/network. Containers run inside Pods, so Pods provide orchestration features like scaling and health checks.
+
+Q4. Explain ReplicaSets and how they relate to Deployments.
+A: ReplicaSet ensures a specified number of pod replicas are running. Deployments manage ReplicaSets, providing rolling updates, rollbacks, and versioning.
+
+Q5. What are Services in Kubernetes? Differentiate types.
+ClusterIP: Internal communication inside cluster (default).
+NodePort: Exposes service on a static port on nodes.
+LoadBalancer: Integrates with cloud provider load balancers (AKS: Azure Load Balancer).
+ExternalName: Maps service to external DNS name.
+
+Q6. How do ConfigMaps and Secrets differ?
+ConfigMaps: Store non-sensitive configuration (like environment variables).
+Secrets: Store sensitive data (passwords, keys) with base64 encoding. In AKS, we can integrate Azure Key Vault to manage secrets securely.
+
+Q7. What is the purpose of Namespaces?
+Namespaces divide cluster resources logically. Used for multi-environment setups, e.g., dev, test, prod, or for multi-client isolation in the same cluster.
+
+
+*****************2. Deployment & Management*******************************************************
+
+Q1. Difference between Deployment, StatefulSet, DaemonSet
+* Deployment: Stateless apps, supports rolling updates.
+* StatefulSet: Stateful apps (databases), preserves identity and storage.
+* DaemonSet: Runs one pod per node, e.g., monitoring agents.
+
+INDETAIL:
+1. Deployment
+
+Purpose:
+Designed for stateless applications (web servers, APIs).
+Manages replicas of pods, ensuring desired number are running.
+Supports rolling updates and rollbacks.
+
+Key Features:
+Easy to scale up/down with replicas.
+Declarative updates using kubectl apply.
+Handles pod replacement if a node fails.
+
+Example Use-Case:
+Web applications, microservices, API backends.
+
+Eg;apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+
+Behavior:
+If you increase replicas, Deployment creates new pods.
+During updates (e.g., new image), Deployment performs a rolling update, keeping the app available.
+
+2. StatefulSet
+Purpose:
+Manages stateful applications that require stable network IDs and persistent storage.
+Examples: Databases, message queues, etc.
+
+Key Features:
+Stable persistent storage with PVCs.
+Stable network identity (each pod gets a predictable hostname).
+Ordered deployment, scaling, and termination.
+
+Example Use-Case: MySQL, MongoDB, Kafka, Redis clusters.
+
+Example YAML (simplified):
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+spec:
+  serviceName: "mongo"
+  replicas: 3
+  selector:
+    matchLabels:
+      app: mongo
+  template:
+    metadata:
+      labels:
+        app: mongo
+    spec:
+      containers:
+      - name: mongo
+        image: mongo:5.0
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 5Gi
+
+Behavior:
+
+Pods are named in order: mongo-0, mongo-1, mongo-2.
+Each pod keeps its storage even if restarted.
+Scaling or updating is ordered to avoid conflicts.
+
+
+3. DaemonSet
+Purpose:
+Ensures one pod runs on every node (or selected nodes).
+Used for node-level services, monitoring, logging, or networking.
+
+Key Features:
+Automatically deploys pods on all new nodes.
+Ensures system-level agents run consistently across the cluster.
+
+Example Use-Case:
+Prometheus Node Exporter, Fluentd logging agent, network proxy agents.
+
+Example YAML (simplified):
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-monitor
+spec:
+  selector:
+    matchLabels:
+      app: node-monitor
+  template:
+    metadata:
+      labels:
+        app: node-monitor
+    spec:
+      containers:
+      - name: monitor
+        image: monitoring-agent:latest
+
+Behavior:
+One pod is created on every node.
+If a new node joins, DaemonSet automatically adds a pod there.
+If a node is removed, pod is deleted automatically.
+
+
+***********Summary*******************************************************
+
+| Resource        | Use Case                                 | Key Features                                         | Pod Identity  |
+| --------------- | ---------------------------------------- | ---------------------------------------------------- | ------------- |
+| **Deployment**  | Stateless apps (web/API)                 | Rolling updates, scaling                             | Ephemeral     |
+| **StatefulSet** | Stateful apps (DB, Kafka)                | Stable hostname, persistent storage, ordered updates | Stable        |
+| **DaemonSet**   | Node-level services (monitoring/logging) | One pod per node, auto-deploy on new nodes           | Node-specific |
+
+
+********************************************************************************************
+
+
+Q2. How to perform rolling update & rollback?
+Rolling update: kubectl apply -f deployment.yaml or az aks upgrade with strategy RollingUpdate.
+Rollback: kubectl rollout undo deployment <name>.
+
+Q3. Difference between Recreate & RollingUpdate
+Recreate: Stops all old pods, then starts new pods (downtime).
+RollingUpdate: Updates pods incrementally (zero downtime).
+
+Q4. Explain Helm Charts and usage in Azure DevOps
+Helm charts package Kubernetes manifests. In Azure DevOps, I use Helm tasks in pipelines to deploy to AKS:
+
+- task: HelmDeploy@0
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscription: 'subscription-name'
+    azureResourceGroup: 'rg-aks'
+    kubernetesCluster: 'aks-cluster'
+    command: 'upgrade'
+    chartType: 'FilePath'
+    chartPath: 'charts/myapp'
+
+Q5. Persistent storage in Kubernetes
+
+PersistentVolume (PV): Cluster resource for storage.
+PersistentVolumeClaim (PVC): Request storage.
+
+StorageClass: Defines type of storage (managed disk, premium SSD).
+In AKS, we often use Azure Disk or Azure File for PVs.
+
+Q6. Scaling applications
+Horizontal Pod Autoscaler (HPA): Scales pods based on CPU/memory.
+Vertical Pod Autoscaler (VPA): Adjusts pod resource requests.
+Cluster Autoscaler: Scales nodes in AKS based on pod demand.
+
+Q7. Environment-specific configurations
+Use Namespaces for dev/test/prod.
+Store configs in ConfigMaps/Secrets.
+Use Helm values files for different environments.
+
+********************************3. Networking & Security******************************************
+
+Q1. Kubernetes networking model
+Each Pod gets a unique IP.
+Pods can communicate via ClusterIP or DNS.
+Kube-proxy manages service networking.
+
+Q2. Ingress controllers in AKS
+Manages external HTTP(S) traffic to services.
+Example: NGINX Ingress Controller.
+Used with TLS termination, host/path-based routing.
+
+Q3. Network Policies
+Controls pod-to-pod communication.
+E.g., allow only frontend pods to talk to backend pods.
+
+Q4. Securing Kubernetes clusters
+RBAC for access control.
+Pod Security Policies for secure pod configurations.
+Secrets management with Azure Key Vault.
+Azure Policy for AKS governance.
+
+Q5. TLS/SSL management
+Use Ingress + TLS secrets or Azure Application Gateway.
+Certificates managed via Azure Key Vault or cert-manager.
+
+*********************************4. Observability & Troubleshooting**********************************************
+
+Q1. Monitoring Kubernetes clusters
+AKS integrates with Azure Monitor & Log Analytics.
+Also use Prometheus + Grafana for metrics and dashboards.
+
+Q2. Troubleshoot CrashLoopBackOff or Pending
+kubectl describe pod <pod> → check events.
+kubectl logs <pod> → check container logs.
+Check resource requests, image pull issues, or missing secrets/configmaps.
+
+Q3. kubectl describe vs logs
+kubectl describe → detailed pod info, events, status.
+kubectl logs → container stdout/stderr logs.
+
+Q4. Logging at scale
+Use Azure Monitor + Container Insights.
+Forward logs to ELK stack or Azure Log Analytics Workspace.
+
+Q5. Liveness and readiness probes
+Liveness probe: Detects unhealthy pods, restarts container.
+Readiness probe: Checks if pod is ready to serve traffic.
+Helps in zero-downtime deployments.
+
+********************************5. CI/CD & DevOps Integration******************************************
+
+Q1. AKS integration in Azure DevOps pipelines
+Use Azure DevOps Service Connection for AKS.
+Tasks: kubectl apply, HelmDeploy, AzureCLI for deployments.
+
+YAML example for Deployment:
+
+- task: Kubernetes@1
+  inputs:
+    connectionType: 'Azure Resource Manager'
+    azureSubscription: 'sub-name'
+    azureResourceGroup: 'rg-aks'
+    kubernetesCluster: 'aks-cluster'
+    command: 'apply'
+    useConfigurationFile: true
+    configuration: 'manifests/deployment.yaml'
+
+Q2. YAML pipelines for Kubernetes
+Define stages: Build → Push Image → Deploy to AKS.
+Use variables for environments.
+
+Q3. Blue-Green / Canary deployments
+Blue-Green: Two identical environments; switch traffic using service selectors.
+Canary: Gradual traffic shift to new pods.
+Implemented via Helm values or Istio/NGINX Ingress.
+
+Q4. Managing secrets in pipelines
+Use Azure Key Vault task in Azure DevOps.
+Inject secrets as environment variables in pipeline.
+
+Q5. Automated rollback
+Configure Deployment rollback via kubectl rollout undo.
+Use pipeline stage to trigger rollback if health checks fail.
+
+*****************************6. Advanced / Scenario-based Questions***********************************
+
+Q1. Multi-environment Kubernetes clusters for multiple clients
+Use Namespaces per client, separate ResourceGroups in AKS.
+Use Helm values files for each client environment.
+
+Q2. Critical production incident
+Example: “In production, one of our web app pods was crashing repeatedly (CrashLoopBackOff). or Application CrashLoopBackOff in AKS
+
+Troubleshooting Steps:
+1. Check pod status: kubectl get pods 
+Pod shows CrashLoopBackOff.
+
+2. Describe pod for events: kubectl describe pod <pod-name> 
+Event log shows: Error: failed to start container: image not found.
+
+3. Check container logs: kubectl logs <pod-name>
+Logs confirm: Docker image version v2.0 does not exist in ACR.
+
+Root Cause:
+Deployment was updated to a new image tag (v2.0), but the image was not pushed to Azure Container Registry (ACR).
+
+Solution: 
+1. Push the correct image to ACR:
+             -> docker build -t myapp:v2.0 .
+             -> docker push <ACR_NAME>.azurecr.io/myapp:v2.0
+
+2. Reapply the deployment (or trigger rolling update):
+             -> kubectl rollout restart deployment myapp-deployment
+
+Result:
+Pod starts successfully with Running status.
+Service is back online within 5-10 minutes.
+
+*********Summary**********************
+“In production, one of our web app pods was crashing repeatedly (CrashLoopBackOff). By checking kubectl describe and logs, I found the container image wasn’t available in ACR. After pushing the correct image and restarting the deployment, the pod recovered, and the service was restored in 10 minutes.”
+
+******************************************************************************************************************
+
+
+
+Q3. High Availability in Kubernetes
+Multi-node AKS cluster, multiple replicas, multiple zones.
+Deploy Ingress with redundant load balancers.
+Enable auto-scaling and Pod anti-affinity rules.
+
+Q4. Upgrade AKS cluster with minimal downtime
+Use node pool upgrade, drain nodes sequentially.
+Rolling updates for deployments during node upgrade.
+
+Q5. Cost optimization in AKS
+Use spot instances for dev/test.
+Scale node pools dynamically with Cluster Autoscaler.
+Remove unused persistent volumes.
+
+Q6. Stateful apps in Kubernetes
+Use StatefulSets + PVs + Headless Services.
+Example: Deploy PostgreSQL or Redis with persistent storage and unique network identity.
