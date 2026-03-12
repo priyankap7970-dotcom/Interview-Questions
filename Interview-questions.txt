@@ -30,6 +30,9 @@ You can assign approvers like:
 DevOps Lead
 Engineering Manager
 Product Owner
+
+In Azure DevOps, we configure production approvals by navigating to Pipelines, then selecting Environments, choosing the Production environment, and configuring Approvals and Checks to require manual approval before deployment.
+
 ***************************************************************
 4️⃣ What happens when a pipeline reaches the production stage with approval gates enabled?
 
