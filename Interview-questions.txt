@@ -1,4 +1,94 @@
 ﻿## 🔹 Project Architecture & Design
+
+Simple Flow (Layman Terms)
+1. Developer pushes code
+2. Pipeline runs Build & Test
+3. Pipeline deploys to Dev / QA / Staging
+4. When it reaches Production stage
+5. Pipeline PAUSES and waits for approval
+6. Manager / DevOps / Product Owner clicks Approve
+7. Deployment continues to Production
+
+-******************************************************************
+
+Imagine pipeline stages:
+
+Build → Test → Dev → QA → Staging → Production
+When pipeline reaches Production, it stops like this:
+------Waiting for approval from: DevOps Manager
+Only after approval → Production deployment starts.
+
+/****************************************************************
+
+3) Where do you configure approval gates in Azure DevOps?
+Answer:
+Approval gates are configured in Environments.
+
+Flow:  Azure DevOps → Pipelines → Environments → Production → Approvals and Checks
+
+You can assign approvers like:
+DevOps Lead
+Engineering Manager
+Product Owner
+***************************************************************
+4️⃣ What happens when a pipeline reaches the production stage with approval gates enabled?
+
+Answer:
+The pipeline pauses and waits for approval from the configured approvers. Once approval is granted, the deployment to production continues.
+********************************************************************
+5️⃣ What is the difference between manual approval and automated gates?
+
+Manual Approval: Requires human approval before deployment.
+
+Automated Gates: Automatically validate conditions like:
+Service health
+Monitoring alerts
+REST API checks
+**********************************************************************
+6️⃣ Can approval gates be configured for non-production environments?
+Answer:
+Yes. Approval gates can be configured for any environment such as Dev, QA, Staging, or Production depending on organizational policies.
+
+*******************************************************************
+8️⃣ What is the difference between environment approvals and pipeline approvals?
+
+Environment approvals
+Applied to an environment like Production.
+
+Pipeline approvals
+Applied within the pipeline stage.
+
+Environment approvals are more secure because they are managed outside the pipeline definition.
+
+************************************************************************
+9️⃣ Can approval gates be bypassed?
+
+Answer:
+Only users with sufficient permissions (like Project Administrators) can bypass or override approval gates.
+********************************************************************
+
+In our CI/CD pipeline, we implemented approval gates before production deployment in Azure DevOps. When the pipeline reaches the production stage, it pauses and waits for approval from the DevOps lead or product owner. This ensures controlled releases, prevents accidental deployments, and allows validation of staging results before pushing to production.
+
+************************************************************************
+
+Build Stage
+   ↓
+Dev Deployment (Auto)
+   ↓
+QA Deployment (Auto)
+   ↓
+Pre-Prod / UAT (QA Approval)
+   ↓
+Production (Manager Approval)
+
+************************************************************************
+In our pipeline, deployments to Dev and QA environments are automated. For the Pre-Prod or UAT environment, we sometimes configure approval gates so that QA or product owners can validate the build before moving to production. Once testing is completed and approval is given, the pipeline proceeds to the production deployment stage, which usually has stricter approval controls.
+***************************************************************************
+
+
+
+
+
 🔹 1. Explain your end-to-end Azure DevOps project architecture (from code commit to production deployment).
 Our application was a microservices-based workload deployed on AKS. Developers pushed code to Azure Repos using feature branches. Once the PR was approved and merged into main, the YAML CI pipeline triggered automatically.
 The CI pipeline built the application, ran unit tests, executed SonarQube quality checks, built a Docker image, and pushed it to Azure Container Registry. Only if all validations passed was the image published.
