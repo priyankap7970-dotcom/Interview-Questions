@@ -2064,6 +2064,28 @@ Use variables for environments.
 
 Q3. Blue-Green / Canary deployments
 Blue-Green: Two identical environments; switch traffic using service selectors.
+
+👉 Service selector = label filter used by a Kubernetes service to route traffic to specific pods.
+A service selector is a label filter.
+
+It tells the Kubernetes Service:
+
+👉 “Send traffic only to pods that have this label.”
+
+Example
+Pods have labels:
+
+labels:
+             app: frontend
+               version: blue
+
+Service selector:
+               selector:
+                   app: frontend
+                      version: blue
+
+Meaning: ➡ The service will send traffic only to pods labeled frontend + blue.
+
 Canary: Gradual traffic shift to new pods.
 Implemented via Helm values or Istio/NGINX Ingress.
 
